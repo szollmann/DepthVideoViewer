@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Install ThreeMeshUI with script tags</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- As three-mesh-ui has a peer dependency on three.js -->
+  <!-- Be sure to load three before three-mesh-ui -->
+
+  <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.132.2/build/three.module.js",
+            "three-mesh-ui": "https://unpkg.com/three-mesh-ui@6.4.0/build/three-mesh-ui.module.js"
+        }
+    }
+    </script>
+
+  <script src="https://unpkg.com/three@0.132.2/build/three.js"></script>
+
+  <script src="https://unpkg.com/three-mesh-ui@6.4.1/build/three-mesh-ui.js"></script>
+
+  <!-- Then we can code our app -->
+  <script type="module">
+    import { VRButton } from 'https://unpkg.com/three@0.132.2/examples/jsm/webxr/VRButton.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+    import VRControl from './utils/VRControl.js';
+
+      /* global THREE, ThreeMeshUI */
+
+      // Below we can find common three-mesh-ui code sample ...
+
+      const WIDTH = window.innerWidth;
+      const HEIGHT = window.innerHeight;
+      const objsToTest = [];
+      const FontJSON = './assets/Roboto-msdf.json';
+      const FontImage = './assets/Roboto-msdf.png';
+      const videoElement = document.createElement('video');
+      let videoGeometry, videoGeometrySphere;
+      let scene, camera, renderer, controls,  vrControl;
+      let meshContainer, meshes, currentMesh, videoMesh;
+      let xrSession = null;
+
+
+      window.addEventListener( 'load', init );
+window.addEventListener( 'resize', onWindowResize );
+
+// compute mouse position in normalized device coordinates
+// (-1 to +1) for both directions.
+// Used to raycasting against the interactive elements
+
+const raycaster = new THREE.Raycaster();
+
+const mouse = new THREE.Vector2();
+mouse.x = mouse.y = null;
+
+let selectState = false;
+
+window.addEventListener( 'pointermove', ( event ) => {
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = -( event.clientY / window.innerHeight ) * 2 + 1;
+} );
+
+window.addEventListener( 'pointerdown', () => {
+	selectState = true;
+} );
+
+window.addEventListener( 'pointerup', () => {
+	selectState = false;
+} );
+
+window.addEventListener( 'touchstart', ( event ) => {
+	selectState = true;
+	mouse.x = ( event.touches[ 0 ].clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = -( event.touches[ 0 ].clientY / window.innerHeight ) * 2 + 1;
+} );
+
+window.addEventListener( 'touchend', () => {
+	selectState = false;
+	mouse.x = null;
+	mouse.y = null;
+} );
+
+
+      //
+
+      function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x505050);
+
+        camera = new THREE.PerspectiveCamera(60, WIDTH / HEIGHT, 0.1, 100);
+
+        renderer = new THREE.WebGLRenderer({
+          antialias: true
+        });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(WIDTH, HEIGHT);
+        document.body.appendChild(renderer.domElement);
+        document.body.appendChild( VRButton.createButton( renderer ) );
+        renderer.xr.enabled = true;
+        xrSession = renderer.xr.getSession();
+        camera.position.set(0, 0, 2);
+        camera.lookAt(new THREE.Vector3(0, 3, -1.8));
+
+
+        // Orbit controls for no-vr
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	camera.position.set( 0, 2, 2 );
+	controls.target = new THREE.Vector3( 0, 3, -1.8 );
+
+
+
+        // Create a video texture
+
+        videoElement.srcObject = null;
+        videoElement.muted = true;
+        videoElement.loop = true;
+        videoElement.playsinline = true;
+        videoElement.style="display:none"
+        videoElement.crossOrigin = 'anonymous';
+        videoElement.src = 'assets/lancasterstacked.mp4';  // Replace with the actual path to your video file
+
+        const videoTexture = new THREE.VideoTexture(videoElement);
+        videoTexture.minFilter = THREE.LinearFilter;
+        videoTexture.magFilter = THREE.LinearFilter;
+
+        // Create custom shader material
+        const vertexShader = `
+            varying vec2 vUv;
+            uniform sampler2D displacementMap;
+
+            void main() {
+                vUv = uv;
+                vec3 displacedPosition = position;
+                vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
+                displacedPosition.z += texture(displacementMap, lower_half_uvs).r;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+            }
+        `;
+
+        const fragmentShader = `
+            varying vec2 vUv;
+            uniform sampler2D rgbTexture;
+
+            void main() {
+                vec2 upper_half_uvs = vec2(vUv.x, (vUv.y * 0.5) + 0.5);
+
+                vec4 rgbColor = texture(rgbTexture, upper_half_uvs);
+                gl_FragColor = vec4(rgbColor.rgb, 1.0); // Use RGB color from the upper half
+            }
+        `;
+
+          const customMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                rgbTexture: { value: videoTexture },
+                displacementMap: { value: videoTexture }
+            },
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            side: THREE.DoubleSide // Render the material on the back side of the geometry
+
+        });
+
+
+
+         videoGeometry = new THREE.PlaneGeometry(5, 3, 50, 30);
+        const radius = 10; // Large radius for the skybox
+        const segments = 64;   // Number of horizontal segments
+        const rings = 64;      // Number of vertical segments
+         videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
+
+
+        videoMesh = new THREE.Mesh(videoGeometry, customMaterial);
+        videoMesh.position.z = -3.0;
+        videoMesh.position.y = 2.5;
+        scene.add(videoMesh);
+        videoElement.play();
+
+        ////////////////
+	// Controllers
+	////////////////
+
+	vrControl = VRControl( renderer, camera, scene );
+
+	scene.add( vrControl.controllerGrips[ 0 ], vrControl.controllers[ 0 ] );
+
+	vrControl.controllers[ 0 ].addEventListener( 'selectstart', () => {
+
+		selectState = true;
+
+	} );
+	vrControl.controllers[ 0 ].addEventListener( 'selectend', () => {
+
+		selectState = false;
+
+	} );
+
+        // TEXT PANEL
+
+        makeTextPanel();
+        makePanel();
+
+        //
+
+        renderer.setAnimationLoop(loop);
+      }
+
+      //
+
+      function makeTextPanel() {
+        const container = new ThreeMeshUI.Block({
+          width: 1.2,
+          height: 0.5,
+          padding: 0.05,
+          justifyContent: "center",
+          textAlign: "center",
+          fontFamily: "./assets/Roboto-msdf.json",
+          fontTexture: "./assets/Roboto-msdf.png"
+        });
+
+        container.position.set(0, 1, -1.8);
+        container.rotation.x = -0.55;
+        scene.add(container);
+
+        //
+
+        container.add(
+          new ThreeMeshUI.Text({
+            content: "VideoPlayer",
+            fontSize: 0.125
+          })
+        );
+      }
+
+      // handles resizing the renderer when the viewport is resized
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function makePanel() {
+
+	// Container block, in which we put the two buttons.
+	// We don't define width and height, it will be set automatically from the children's dimensions
+	// Note that we set contentDirection: "row-reverse", in order to orient the buttons horizontally
+
+	const container = new ThreeMeshUI.Block( {
+		justifyContent: 'center',
+		contentDirection: 'row-reverse',
+		fontFamily: FontJSON,
+		fontTexture: FontImage,
+		fontSize: 0.07,
+		padding: 0.02,
+		borderRadius: 0.11
+	} );
+
+	container.position.set( 0, 0.6, -1.2 );
+	container.rotation.x = -0.55;
+	scene.add( container );
+
+	// BUTTONS
+
+	// We start by creating objects containing options that we will use with the two buttons,
+	// in order to write less code.
+
+	const buttonOptions = {
+		width: 0.4,
+		height: 0.15,
+		justifyContent: 'center',
+		offset: 0.05,
+		margin: 0.02,
+		borderRadius: 0.075
+	};
+
+	// Options for component.setupState().
+	// It must contain a 'state' parameter, which you will refer to with component.setState( 'name-of-the-state' ).
+
+	const hoveredStateAttributes = {
+		state: 'hovered',
+		attributes: {
+			offset: 0.035,
+			backgroundColor: new THREE.Color( 0x999999 ),
+			backgroundOpacity: 1,
+			fontColor: new THREE.Color( 0xffffff )
+		},
+	};
+
+	const idleStateAttributes = {
+		state: 'idle',
+		attributes: {
+			offset: 0.035,
+			backgroundColor: new THREE.Color( 0x666666 ),
+			backgroundOpacity: 0.3,
+			fontColor: new THREE.Color( 0xffffff )
+		},
+	};
+
+	// Buttons creation, with the options objects passed in parameters.
+
+	const buttonSingle = new ThreeMeshUI.Block( buttonOptions );
+	const button360 = new ThreeMeshUI.Block( buttonOptions );
+
+	// Add text to buttons
+
+	buttonSingle.add(
+		new ThreeMeshUI.Text( { content: 'SingleView' } )
+	);
+
+	button360.add(
+		new ThreeMeshUI.Text( { content: '360View' } )
+	);
+
+	// Create states for the buttons.
+	// In the loop, we will call component.setState( 'state-name' ) when mouse hover or click
+
+	const selectedAttributes = {
+		offset: 0.02,
+		backgroundColor: new THREE.Color( 0x777777 ),
+		fontColor: new THREE.Color( 0x222222 )
+	};
+
+	buttonSingle.setupState( {
+		state: 'selected',
+		attributes: selectedAttributes,
+		onSet: () => {
+      xrSession = renderer.xr.getSession();
+      if (xrSession) {
+            xrSession.end(); // Stop the XR session
+        }
+      var ret = startFileDialog();
+      if(!ret)
+        {
+          videoElement.src = 'assets/lancasterstacked.mp4';  // Replace with the actual path to your video file
+          videoElement.play();
+        }
+      videoMesh.geometry = videoGeometry;
+      videoElement.muted = false;
+
+		}
+	} );
+	buttonSingle.setupState( hoveredStateAttributes );
+	buttonSingle.setupState( idleStateAttributes );
+
+	//
+
+	button360.setupState( {
+		state: 'selected',
+		attributes: selectedAttributes,
+		onSet: () => {
+      xrSession = renderer.xr.getSession();
+      if (xrSession) {
+            xrSession.end(); // Stop the XR session
+      }
+
+      var ret = startFileDialog();
+      if(!ret)
+        {
+          videoElement.src = 'assets/campusS.mp4';  // Replace with the actual path to your video file
+          videoElement.play();
+        }
+      videoMesh.geometry = videoGeometrySphere;
+
+			//currentMesh -= 1;
+			//if ( currentMesh < 0 ) currentMesh = 2;
+			//showMesh( currentMesh );
+
+		}
+	} );
+	button360.setupState( hoveredStateAttributes );
+	button360.setupState( idleStateAttributes );
+
+	//
+
+	container.add( buttonSingle, button360 );
+	objsToTest.push( buttonSingle, button360 );
+
+}
+      //
+
+
+
+      function loop() {
+        ThreeMeshUI.update();
+        renderer.render(scene, camera);
+        updateButtons();
+      }
+
+      // Called in the loop, get intersection with either the mouse or the VR controllers,
+// then update the buttons states according to result
+
+function updateButtons() {
+
+	// Find closest intersecting object
+
+	let intersect;
+
+	if ( renderer.xr.isPresenting ) {
+
+		vrControl.setFromController( 0, raycaster.ray );
+
+		intersect = raycast();
+
+		// Position the little white dot at the end of the controller pointing ray
+		if ( intersect ) vrControl.setPointerAt( 0, intersect.point );
+
+	} else if ( mouse.x !== null && mouse.y !== null ) {
+
+		raycaster.setFromCamera( mouse, camera );
+
+		intersect = raycast();
+
+	}
+
+	// Update targeted button state (if any)
+
+	if ( intersect && intersect.object.isUI ) {
+
+		if ( selectState ) {
+
+			// Component.setState internally call component.set with the options you defined in component.setupState
+			intersect.object.setState( 'selected' );
+
+
+		} else {
+
+			// Component.setState internally call component.set with the options you defined in component.setupState
+			intersect.object.setState( 'hovered' );
+
+		}
+
+	}
+
+	// Update non-targeted buttons state
+
+	objsToTest.forEach( ( obj ) => {
+
+		if ( ( !intersect || obj !== intersect.object ) && obj.isUI ) {
+
+			// Component.setState internally call component.set with the options you defined in component.setupState
+			obj.setState( 'idle' );
+
+		}
+
+	} );
+
+}
+
+//
+
+function raycast() {
+
+	return objsToTest.reduce( ( closestIntersection, obj ) => {
+
+		const intersection = raycaster.intersectObject( obj, true );
+
+		if ( !intersection[ 0 ] ) return closestIntersection;
+
+		if ( !closestIntersection || intersection[ 0 ].distance < closestIntersection.distance ) {
+
+			intersection[ 0 ].object = obj;
+
+			return intersection[ 0 ];
+
+		}
+
+		return closestIntersection;
+
+	}, null );
+
+}
+
+
+function startFileDialog() {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'video/*';
+
+    let fileSelected = false; // Flag to track if a file was selected
+
+    fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            videoElement.src = URL.createObjectURL(file);
+            videoElement.play();
+            fileSelected = true; // Set the flag to true if a file is selected
+        }
+    });
+
+    fileInput.click(); // Trigger file dialog
+
+    return fileSelected; // Return the flag indicating whether a file was selected
+}
+    </script>
+</body>
+
+</html>
