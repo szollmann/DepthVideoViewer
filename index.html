@@ -52,8 +52,8 @@
       let xrSession = null;
 
 
-      window.addEventListener( 'load', init );
-window.addEventListener( 'resize', onWindowResize );
+      	window.addEventListener( 'load', init );
+	window.addEventListener( 'resize', onWindowResize );
 
 // compute mouse position in normalized device coordinates
 // (-1 to +1) for both directions.
@@ -130,6 +130,7 @@ window.addEventListener( 'touchend', () => {
         videoElement.style="display:none"
         videoElement.crossOrigin = 'anonymous';
         videoElement.src = 'assets/lancasterstacked.mp4';  // Replace with the actual path to your video file
+	videoElement.muted = false;
 
         const videoTexture = new THREE.VideoTexture(videoElement);
         videoTexture.minFilter = THREE.LinearFilter;
@@ -372,6 +373,7 @@ window.addEventListener( 'touchend', () => {
           videoElement.play();
         }
       videoMesh.geometry = videoGeometrySphere;
+			videoElement.muted = false;
 
 			//currentMesh -= 1;
 			//if ( currentMesh < 0 ) currentMesh = 2;
