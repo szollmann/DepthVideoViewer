@@ -130,8 +130,7 @@ window.addEventListener( 'touchend', () => {
         videoElement.style="display:none"
         videoElement.crossOrigin = 'anonymous';
         videoElement.src = 'assets/lancasterstacked.mp4';  // Replace with the actual path to your video file
-	videoElement.muted = false;
-
+	
         const videoTexture = new THREE.VideoTexture(videoElement);
         videoTexture.minFilter = THREE.LinearFilter;
         videoTexture.magFilter = THREE.LinearFilter;
@@ -187,6 +186,8 @@ window.addEventListener( 'touchend', () => {
         videoMesh.position.y = 2.5;
         scene.add(videoMesh);
         videoElement.play();
+	videoElement.muted = false;
+
 
         ////////////////
 	// Controllers
