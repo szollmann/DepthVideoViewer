@@ -130,7 +130,7 @@ window.addEventListener( 'touchend', () => {
         videoElement.style="display:none"
         videoElement.crossOrigin = 'anonymous';
         videoElement.src = 'assets/lancasterstacked.mp4';  // Replace with the actual path to your video file
-	
+
         const videoTexture = new THREE.VideoTexture(videoElement);
         videoTexture.minFilter = THREE.LinearFilter;
         videoTexture.magFilter = THREE.LinearFilter;
@@ -313,8 +313,8 @@ window.addEventListener( 'touchend', () => {
 
 	const buttonSingle = new ThreeMeshUI.Block( buttonOptions );
 	const buttonPlay = new ThreeMeshUI.Block( buttonOptions );
-	
-	      
+
+
 	const button360 = new ThreeMeshUI.Block( buttonOptions );
 
 	// Add text to buttons
@@ -324,7 +324,7 @@ window.addEventListener( 'touchend', () => {
 	);
 
 	buttonPlay.add(
-		new ThreeMeshUI.Text( { content: '|>' } )
+		new ThreeMeshUI.Text( { content: 'Play' } )
 	);
 
 	button360.add(
@@ -369,10 +369,10 @@ window.addEventListener( 'touchend', () => {
 		attributes: selectedAttributes,
 		onSet: () => {
 			if (videoElement.paused) {
-			 videoElement.play();	
+			 videoElement.play();
 			}
 			else {
-    				video.pause();
+    				videoElement.pause();
 			}
 		}
 	} );
