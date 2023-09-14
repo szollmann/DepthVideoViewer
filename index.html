@@ -138,13 +138,13 @@ window.addEventListener( 'touchend', () => {
         // Create custom shader material
         const vertexShader = `
             varying vec2 vUv;
-            uniform sampler2D displacementMap;
+            uniform sampler2D rgbTexture;
 
             void main() {
                 vUv = uv;
                 vec3 displacedPosition = position;
                 vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
-                displacedPosition.z += texture(displacementMap, lower_half_uvs).r;
+                displacedPosition.z += texture(rgbTexture, lower_half_uvs).r;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
             }
         `;
@@ -163,8 +163,7 @@ window.addEventListener( 'touchend', () => {
 
           const customMaterial = new THREE.ShaderMaterial({
             uniforms: {
-                rgbTexture: { value: videoTexture },
-                displacementMap: { value: videoTexture }
+                rgbTexture: { value: videoTexture }
             },
             vertexShader: vertexShader,
             fragmentShader: fragmentShader,
@@ -210,7 +209,7 @@ window.addEventListener( 'touchend', () => {
 
         // TEXT PANEL
 
-        makeTextPanel();
+        //makeTextPanel();
         makePanel();
 
         //
@@ -313,12 +312,19 @@ window.addEventListener( 'touchend', () => {
 	// Buttons creation, with the options objects passed in parameters.
 
 	const buttonSingle = new ThreeMeshUI.Block( buttonOptions );
+	const buttonPlay = new ThreeMeshUI.Block( buttonOptions );
+	
+	      
 	const button360 = new ThreeMeshUI.Block( buttonOptions );
 
 	// Add text to buttons
 
 	buttonSingle.add(
 		new ThreeMeshUI.Text( { content: 'SingleView' } )
+	);
+
+	buttonPlay.add(
+		new ThreeMeshUI.Text( { content: '|>' } )
 	);
 
 	button360.add(
@@ -358,6 +364,22 @@ window.addEventListener( 'touchend', () => {
 
 	//
 
+	      buttonPlay.setupState( {
+		state: 'selected',
+		attributes: selectedAttributes,
+		onSet: () => {
+			if (videoElement.paused) {
+			 videoElement.play();	
+			}
+			else {
+    				video.pause();
+			}
+		}
+	} );
+
+	buttonPlay.setupState( hoveredStateAttributes );
+	buttonPlay.setupState( idleStateAttributes );
+
 	button360.setupState( {
 		state: 'selected',
 		attributes: selectedAttributes,
@@ -387,8 +409,8 @@ window.addEventListener( 'touchend', () => {
 
 	//
 
-	container.add( buttonSingle, button360 );
-	objsToTest.push( buttonSingle, button360 );
+	container.add( buttonSingle,buttonPlay, button360 );
+	objsToTest.push( buttonSingle,buttonPlay, button360 );
 
 }
       //
