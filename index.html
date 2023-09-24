@@ -141,9 +141,9 @@ window.addEventListener( 'touchend', () => {
             uniform sampler2D rgbTexture;
 
             void main() {
-                vUv = uv;
+                
                 vec3 displacedPosition = position;
-                vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
+                vec2 lower_half_uvs = vec2(vUv.x, vUv.y * 0.5);
                 displacedPosition.z += 0.5*texture(rgbTexture, lower_half_uvs).r;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
             }
@@ -155,7 +155,7 @@ window.addEventListener( 'touchend', () => {
 
             void main() {
                 vec2 upper_half_uvs = vec2(vUv.x, (vUv.y * 0.5) + 0.5);
-		 vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
+		 vec2 lower_half_uvs = vec2(vUv.x, vUv.y * 0.5);
                	
                 vec4 rgbColor = texture(rgbTexture, lower_half_uvs);
                 gl_FragColor = vec4(rgbColor.rgb, 1.0); // Use RGB color from the upper half
