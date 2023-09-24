@@ -144,7 +144,7 @@ window.addEventListener( 'touchend', () => {
                 vUv = uv;
                 vec3 displacedPosition = position;
                 vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
-                displacedPosition.z += texture(rgbTexture, lower_half_uvs).r;
+                displacedPosition.z += 0.5*texture(rgbTexture, lower_half_uvs).r;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
             }
         `;
