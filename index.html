@@ -155,8 +155,9 @@ window.addEventListener( 'touchend', () => {
 
             void main() {
                 vec2 upper_half_uvs = vec2(vUv.x, (vUv.y * 0.5) + 0.5);
-
-                vec4 rgbColor = texture(rgbTexture, upper_half_uvs);
+		 vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
+               	
+                vec4 rgbColor = texture(rgbTexture, lower_half_uvs);
                 gl_FragColor = vec4(rgbColor.rgb, 1.0); // Use RGB color from the upper half
             }
         `;
