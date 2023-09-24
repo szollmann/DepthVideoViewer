@@ -141,7 +141,7 @@ window.addEventListener( 'touchend', () => {
             uniform sampler2D rgbTexture;
 
             void main() {
-                
+                vUv = uv;
                 vec3 displacedPosition = position;
                 vec2 lower_half_uvs = vec2(vUv.x, vUv.y * 0.5);
                 displacedPosition.z += 0.5*texture(rgbTexture, lower_half_uvs).r;
