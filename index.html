@@ -141,7 +141,7 @@ window.addEventListener( 'touchend', () => {
         const vertexShader = `
             varying vec2 vUv;
             uniform sampler2D rgbTexture;
-	    uniform float depthSwitch; 
+	    uniform bool depthSwitch; 
 
 	    float displacementScale =-1.0;
      
@@ -285,6 +285,7 @@ window.addEventListener( 'touchend', () => {
 
 	container.position.set( 0, 0.6, 1.2 );
 	container.rotation.x = -0.55;
+	container.rotation.y = -0.7;
 	scene.add( container );
 
 	// BUTTONS
