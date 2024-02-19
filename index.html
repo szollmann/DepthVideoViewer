@@ -239,7 +239,7 @@ window.addEventListener( 'touchend', () => {
           fontTexture: "./assets/Roboto-msdf.png"
         });
 
-        container.position.set(0, 1, -1.8);
+        container.position.set(0, 1, 1.8);
         container.rotation.x = -0.55;
         scene.add(container);
 
@@ -277,7 +277,7 @@ window.addEventListener( 'touchend', () => {
 		borderRadius: 0.11
 	} );
 
-	container.position.set( 0, 0.6, -1.2 );
+	container.position.set( 0, 0.6, 1.2 );
 	container.rotation.x = -0.55;
 	scene.add( container );
 
@@ -325,6 +325,7 @@ window.addEventListener( 'touchend', () => {
 
 
 	const button360 = new ThreeMeshUI.Block( buttonOptions );
+	const buttonDepth = new ThreeMeshUI.Block( buttonOptions );
 
 	// Add text to buttons
 
@@ -336,9 +337,15 @@ window.addEventListener( 'touchend', () => {
 		new ThreeMeshUI.Text( { content: 'Play' } )
 	);
 
+	buttonDepth.add(
+		new ThreeMeshUI.Text( { content: 'Depth' } )
+	);
+
 	button360.add(
 		new ThreeMeshUI.Text( { content: '360View' } )
 	);
+
+	      
 
 	// Create states for the buttons.
 	// In the loop, we will call component.setState( 'state-name' ) when mouse hover or click
@@ -374,6 +381,23 @@ window.addEventListener( 'touchend', () => {
 	//
 
 	      buttonPlay.setupState( {
+		state: 'selected',
+		attributes: selectedAttributes,
+		onSet: () => {
+			if (videoElement.paused) {
+			 videoElement.play();
+			}
+			else {
+    				videoElement.pause();
+			}
+		}
+	} );
+
+	buttonDepth.setupState( hoveredStateAttributes );
+	buttonDepth.setupState( idleStateAttributes );
+
+
+	 buttonDepth.setupState( {
 		state: 'selected',
 		attributes: selectedAttributes,
 		onSet: () => {
