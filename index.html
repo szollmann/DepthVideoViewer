@@ -144,7 +144,7 @@ window.addEventListener( 'touchend', () => {
                 vUv = uv;
                 vec3 displacedPosition = position;
                 vec2 lower_half_uvs = vec2(vUv.x, vUv.y * 0.5);
-		float displacement = 2.0*texture(rgbTexture, lower_half_uvs).r;
+		float displacement = 0.5*texture(rgbTexture, lower_half_uvs).r;
   		if(vUv.y==1.0){
   			displacement = 0.0;
 		}
