@@ -90,7 +90,7 @@ window.addEventListener( 'touchend', () => {
 	mouse.x = null;
 	mouse.y = null;
 } );
-
+const customMaterial;
 
       //
 
@@ -175,7 +175,7 @@ window.addEventListener( 'touchend', () => {
             }
         `;
 
-          const customMaterial = new THREE.ShaderMaterial({
+           customMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 rgbTexture: { value: videoTexture },
 		depthSwitch: { value: true } // Initial value
