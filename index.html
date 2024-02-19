@@ -139,7 +139,7 @@ window.addEventListener( 'touchend', () => {
         const vertexShader = `
             varying vec2 vUv;
             uniform sampler2D rgbTexture;
-	    float displacementScale =1.0;
+	    float displacementScale =-1.0;
             void main() {
                 vUv = uv;
                 vec3 displacedPosition = position;
