@@ -285,7 +285,9 @@ let customMaterial;
 
 	container.position.set( 0, 0.6, 1.2 );
 	//container.rotation.x = -0.55;
-	container.rotation.y = -1.33;
+	container.rotation.y = Math.PI; // Rotate by 180 degrees around the Y-axis
+	container.rotation.x = Math.PI / 12; // Tilt by 15 degrees around the X-axis
+
 	scene.add( container );
 
 	// BUTTONS
