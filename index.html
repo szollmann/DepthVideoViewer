@@ -195,10 +195,11 @@ let customMaterial;
          videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
 	      videoGeometrySphere.scale( - 1, 1, 1 );
 
+
         videoMesh = new THREE.Mesh(videoGeometry, customMaterial);
         videoMesh.position.z = 3.0;
         videoMesh.position.y = 2.5;
-        videoMesh.rotation.y = 1.57;
+
         scene.add(videoMesh);
         videoElement.play();
 	       videoElement.muted = false;
@@ -381,6 +382,8 @@ let customMaterial;
           videoElement.play();
         }
       videoMesh.geometry = videoGeometry;
+      videoMesh.rotation.y = 0;
+
       videoElement.muted = false;
 
 		}
@@ -436,6 +439,8 @@ let customMaterial;
           videoElement.play();
         }
       videoMesh.geometry = videoGeometrySphere;
+      videoMesh.rotation.y = 1.57;
+
 			videoElement.muted = false;
 
 			//currentMesh -= 1;
