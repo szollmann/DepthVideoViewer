@@ -193,11 +193,12 @@ let customMaterial;
         const segments = 640;   // Number of horizontal segments
         const rings = 640;      // Number of vertical segments
          videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
-	        videoGeometrySphere.scale( - 1, 1, 1 );
+	      videoGeometrySphere.scale( - 1, 1, 1 );
 
         videoMesh = new THREE.Mesh(videoGeometry, customMaterial);
         videoMesh.position.z = 3.0;
         videoMesh.position.y = 2.5;
+        videoMesh.rotation.y = 1.57;
         scene.add(videoMesh);
         videoElement.play();
 	       videoElement.muted = false;
