@@ -90,7 +90,7 @@ window.addEventListener( 'touchend', () => {
 	mouse.x = null;
 	mouse.y = null;
 } );
-
+let customMaterial;
 
       //
 
@@ -109,15 +109,15 @@ window.addEventListener( 'touchend', () => {
         document.body.appendChild( VRButton.createButton( renderer ) );
         renderer.xr.enabled = true;
         xrSession = renderer.xr.getSession();
-        camera.position.set(0, 0, 0);
-        camera.lookAt(new THREE.Vector3(0, 3, -1.8));
+        camera.position.set(0, 0, -2);
+        camera.lookAt(new THREE.Vector3(0, 3, 1.8));
 
 
         // Orbit controls for no-vr
 
 	controls = new OrbitControls( camera, renderer.domElement );
-	camera.position.set( 0, 2, 2 );
-	controls.target = new THREE.Vector3( 0, 3, -1.8 );
+	camera.position.set( 0, 2, -2 );
+	controls.target = new THREE.Vector3( 0, 3, 1.8 );
 
 
 
@@ -135,17 +135,30 @@ window.addEventListener( 'touchend', () => {
         videoTexture.minFilter = THREE.LinearFilter;
         videoTexture.magFilter = THREE.LinearFilter;
 
+
+
         // Create custom shader material
         const vertexShader = `
             varying vec2 vUv;
             uniform sampler2D rgbTexture;
+	    uniform bool depthSwitch;
+
+	    float displacementScale =-1.5;
 
             void main() {
                 vUv = uv;
                 vec3 displacedPosition = position;
-                vec2 lower_half_uvs = vec2(uv.x, uv.y * 0.5);
-                displacedPosition.z += texture(rgbTexture, lower_half_uvs).r;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+                vec2 lower_half_uvs = vec2(vUv.x, vUv.y * 0.5);
+		float displacement = texture(rgbTexture, lower_half_uvs).r;
+  		if(vUv.y==1.0 || !depthSwitch){
+  			displacement = 0.0;
+		}
+
+        	vec3 newPosition = position + normal * displacement * displacementScale;
+       		 gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+
+                //displacedPosition.z += displacement;
+                //gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
             }
         `;
 
@@ -155,15 +168,17 @@ window.addEventListener( 'touchend', () => {
 
             void main() {
                 vec2 upper_half_uvs = vec2(vUv.x, (vUv.y * 0.5) + 0.5);
+		 //vec2 lower_half_uvs = vec2(vUv.x, vUv.y * 0.5);
 
                 vec4 rgbColor = texture(rgbTexture, upper_half_uvs);
                 gl_FragColor = vec4(rgbColor.rgb, 1.0); // Use RGB color from the upper half
             }
         `;
 
-          const customMaterial = new THREE.ShaderMaterial({
+           customMaterial = new THREE.ShaderMaterial({
             uniforms: {
-                rgbTexture: { value: videoTexture }
+                rgbTexture: { value: videoTexture },
+		depthSwitch: { value: true } // Initial value
             },
             vertexShader: vertexShader,
             fragmentShader: fragmentShader,
@@ -173,17 +188,15 @@ window.addEventListener( 'touchend', () => {
 
 
 
-         videoGeometry = new THREE.PlaneGeometry(4, 3, 400, 300); //change for different resolutions?
+         videoGeometry = new THREE.PlaneGeometry(4, 3, 1200, 900);
         const radius = 10; // Large radius for the skybox
-        const segments = 64;   // Number of horizontal segments
-        const rings = 64;      // Number of vertical segments
-        videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
-         // invert the geometry on the x-axis so that all of the faces point inward
-				videoGeometrySphere.scale( - 1, 1, 1 );
-
+        const segments = 640;   // Number of horizontal segments
+        const rings = 640;      // Number of vertical segments
+         videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
+	        videoGeometrySphere.scale( - 1, 1, 1 );
 
         videoMesh = new THREE.Mesh(videoGeometry, customMaterial);
-        videoMesh.position.z = -3.0;
+        videoMesh.position.z = 3.0;
         videoMesh.position.y = 2.5;
         scene.add(videoMesh);
         videoElement.play();
@@ -232,7 +245,7 @@ window.addEventListener( 'touchend', () => {
           fontTexture: "./assets/Roboto-msdf.png"
         });
 
-        container.position.set(0, 1, -1.8);
+        container.position.set(0, 1, 1.8);
         container.rotation.x = -0.55;
         scene.add(container);
 
@@ -270,8 +283,11 @@ window.addEventListener( 'touchend', () => {
 		borderRadius: 0.11
 	} );
 
-	container.position.set( 0, 0.6, -1.2 );
-	container.rotation.x = -0.55;
+	container.position.set( 0, 0.9, 2 );
+	//container.rotation.x = -0.55;
+	container.rotation.y = Math.PI; // Rotate by 180 degrees around the Y-axis
+	container.rotation.x = Math.PI / 12; // Tilt by 15 degrees around the X-axis
+
 	scene.add( container );
 
 	// BUTTONS
@@ -318,6 +334,7 @@ window.addEventListener( 'touchend', () => {
 
 
 	const button360 = new ThreeMeshUI.Block( buttonOptions );
+	const buttonDepth = new ThreeMeshUI.Block( buttonOptions );
 
 	// Add text to buttons
 
@@ -329,9 +346,15 @@ window.addEventListener( 'touchend', () => {
 		new ThreeMeshUI.Text( { content: 'Play' } )
 	);
 
+	buttonDepth.add(
+		new ThreeMeshUI.Text( { content: 'Depth' } )
+	);
+
 	button360.add(
 		new ThreeMeshUI.Text( { content: '360View' } )
 	);
+
+
 
 	// Create states for the buttons.
 	// In the loop, we will call component.setState( 'state-name' ) when mouse hover or click
@@ -379,6 +402,20 @@ window.addEventListener( 'touchend', () => {
 		}
 	} );
 
+	buttonDepth.setupState( hoveredStateAttributes );
+	buttonDepth.setupState( idleStateAttributes );
+
+
+	 buttonDepth.setupState( {
+		state: 'selected',
+		attributes: selectedAttributes,
+		onSet: () => {
+
+			 customMaterial.uniforms.depthSwitch.value = !customMaterial.uniforms.depthSwitch.value;
+
+		}
+	} );
+
 	buttonPlay.setupState( hoveredStateAttributes );
 	buttonPlay.setupState( idleStateAttributes );
 
@@ -411,8 +448,8 @@ window.addEventListener( 'touchend', () => {
 
 	//
 
-	container.add( buttonSingle,buttonPlay, button360 );
-	objsToTest.push( buttonSingle,buttonPlay, button360 );
+	container.add( buttonSingle,buttonPlay, buttonDepth, button360 );
+	objsToTest.push( buttonSingle,buttonPlay,buttonDepth, button360 );
 
 }
       //
