@@ -109,7 +109,7 @@ window.addEventListener( 'touchend', () => {
         document.body.appendChild( VRButton.createButton( renderer ) );
         renderer.xr.enabled = true;
         xrSession = renderer.xr.getSession();
-        camera.position.set(0, 0, 2);
+        camera.position.set(0, 0, 0);
         camera.lookAt(new THREE.Vector3(0, 3, -1.8));
 
 
@@ -173,11 +173,13 @@ window.addEventListener( 'touchend', () => {
 
 
 
-         videoGeometry = new THREE.PlaneGeometry(4, 3, 400, 300);
+         videoGeometry = new THREE.PlaneGeometry(4, 3, 400, 300); //change for different resolutions?
         const radius = 10; // Large radius for the skybox
         const segments = 64;   // Number of horizontal segments
         const rings = 64;      // Number of vertical segments
-         videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
+        videoGeometrySphere = new THREE.SphereGeometry(radius, segments, rings);
+         // invert the geometry on the x-axis so that all of the faces point inward
+				videoGeometrySphere.scale( - 1, 1, 1 );
 
 
         videoMesh = new THREE.Mesh(videoGeometry, customMaterial);
@@ -185,7 +187,7 @@ window.addEventListener( 'touchend', () => {
         videoMesh.position.y = 2.5;
         scene.add(videoMesh);
         videoElement.play();
-	videoElement.muted = false;
+	       videoElement.muted = false;
 
 
         ////////////////
